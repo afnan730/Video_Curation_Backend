@@ -1,11 +1,18 @@
+// src/app.module.ts
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { VideosModule } from './videos/videos.module';
+import { Video } from './videos/entities/video.entity';
 
 @Module({
-  imports: [VideosModule],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    TypeOrmModule.forRoot({
+      type: 'sqlite',
+      database: 'videos.sqlite',
+      entities: [Video],
+      synchronize: true, // Auto create tables (dev only)
+    }),
+    VideosModule,
+  ],
 })
 export class AppModule {}
