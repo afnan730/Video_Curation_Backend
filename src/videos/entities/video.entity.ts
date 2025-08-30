@@ -1,5 +1,11 @@
-
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Unique } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Unique,
+} from 'typeorm';
 
 @Entity()
 @Unique(['youtubeUrl'])
@@ -11,10 +17,10 @@ export class Video {
   title: string;
 
   @Column({ nullable: true })
-  description?: string;
+  description: string;
 
   @Column({ nullable: true })
-  thumbnailUrl?: string;
+  thumbnailUrl: string;
 
   @Column()
   youtubeUrl: string;
