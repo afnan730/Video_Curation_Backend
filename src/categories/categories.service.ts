@@ -1,5 +1,9 @@
 // src/categories/categories.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category } from './entities/category.entity';
@@ -14,6 +18,17 @@ export class CategoriesService {
   ) {}
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
+    // Capitalize first letter and lowercase the rest
+    createCategoryDto.name =
+      createCategoryDto.name.charAt(0).toUpperCase() +
+      createCategoryDto.name.slice(1).toLowerCase();
+
+    const ifExists = await this.categoryRepository.findOne({
+      where: { name: createCategoryDto.name },
+    });
+    if (ifExists) {
+      throw new BadRequestException('Category already exists');
+    }
     const category = this.categoryRepository.create(createCategoryDto);
     return this.categoryRepository.save(category);
   }
@@ -32,6 +47,18 @@ export class CategoriesService {
   }
 
   async update(id: number, updateCategoryDto: UpdateCategoryDto) {
+    if (updateCategoryDto.name) {
+      updateCategoryDto.name =
+        updateCategoryDto.name.charAt(0).toUpperCase() +
+        updateCategoryDto.name.slice(1).toLowerCase();
+
+      const ifExists = await this.categoryRepository.findOne({
+        where: { name: updateCategoryDto.name },
+      });
+      if (ifExists && ifExists.id !== id) {
+        throw new BadRequestException('Category already exists');
+      }
+    }
     await this.categoryRepository.update(id, updateCategoryDto);
     return this.findOne(id);
   }

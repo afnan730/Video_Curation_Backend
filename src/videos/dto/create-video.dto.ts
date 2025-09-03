@@ -1,18 +1,33 @@
 // src/videos/dto/create-video.dto.ts
-import { IsString, IsOptional, IsUrl } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsUrl,
+  IsEnum,
+  IsArray,
+  ArrayNotEmpty,
+} from 'class-validator';
+import { Difficulty } from '../entities/video.entity';
 
 export class CreateVideoDto {
   @IsString()
   title: string;
 
   @IsString()
-  @IsOptional()
-  description?: string;
+  description: string;
 
   @IsUrl()
   youtubeUrl: string;
 
   @IsString()
+  thumbnailUrl: string;
+
+  @IsEnum(Difficulty)
   @IsOptional()
-  thumbnailUrl?: string;
+  difficulty: Difficulty;
+
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  categories: string[];
 }

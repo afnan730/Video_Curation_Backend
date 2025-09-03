@@ -5,16 +5,18 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Unique,
   ManyToMany,
 } from 'typeorm';
 import { Video } from '../../videos/entities/video.entity';
 
 @Entity()
+@Unique(['name'])
 export class Category {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
+  @Column()
   name: string;
 
   @Column({ nullable: true })

@@ -2,9 +2,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { VideosModule } from './videos/videos.module';
+import { CategoriesModule } from './categories/categories.module';
 import { Video } from './videos/entities/video.entity';
 
 import { ConfigModule } from '@nestjs/config';
+import { Category } from './categories/entities/category.entity';
 
 @Module({
   imports: [
@@ -14,10 +16,11 @@ import { ConfigModule } from '@nestjs/config';
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: 'videos.sqlite',
-      entities: [Video],
+      entities: [Video, Category],
       synchronize: true, // Auto create tables (dev only)
     }),
     VideosModule,
+    CategoriesModule,
   ],
 })
 export class AppModule {}

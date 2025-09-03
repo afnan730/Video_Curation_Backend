@@ -8,7 +8,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Video } from './entities/video.entity';
+import { Video, Difficulty } from './entities/video.entity';
+import { Category } from '../categories/entities/category.entity';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { HttpService } from '@nestjs/axios';
@@ -19,30 +20,69 @@ export class VideosService {
   constructor(
     @InjectRepository(Video)
     private videoRepository: Repository<Video>,
+    @InjectRepository(Category)
+    private categoryRepository: Repository<Category>,
     private httpService: HttpService,
   ) {}
 
-  async create(createVideoDto: CreateVideoDto): Promise<Video> {
-    const videoId = this.extractVideoId(createVideoDto.youtubeUrl);
+  private normalizeYoutubeUrl(url: string): string | null {
+    const videoId = this.extractVideoId(url);
     if (!videoId) {
+      return null;
+    }
+    return `https://www.youtube.com/watch?v=${videoId}`;
+  }
+
+  private async findCategoriesByName(names: string[]) {
+    const categories = await this.categoryRepository.find({
+      where: names.map((name) => ({ name })),
+    });
+    if (categories.length !== names.length) {
+      const foundNames = categories.map((cat) => cat.name);
+      const missingNames = names.filter((name) => !foundNames.includes(name));
+      throw new BadRequestException(
+        `The following categories do not exist: ${missingNames.join(', ')}`,
+      );
+    }
+    return categories;
+  }
+
+  async create(createVideoDto: CreateVideoDto): Promise<Video> {
+    const normalizedUrl = this.normalizeYoutubeUrl(createVideoDto.youtubeUrl);
+    if (!normalizedUrl) {
       throw new BadRequestException('Invalid YouTube URL');
     }
-    console.log(videoId);
-    // Always save normalized format (videoId only or full consistent URL)
-    const normalizedUrl = `https://www.youtube.com/watch?v=${videoId}`;
     createVideoDto.youtubeUrl = normalizedUrl;
+
     const ifExists = await this.videoRepository.findOne({
       where: { youtubeUrl: normalizedUrl },
     });
     if (ifExists) {
       throw new BadRequestException('Video already exists');
     }
-    const video = this.videoRepository.create(createVideoDto);
+
+    const categories = await this.findCategoriesByName(
+      createVideoDto.categories,
+    );
+
+    const { categories: _, ...videoData } = createVideoDto;
+    const video = this.videoRepository.create(videoData);
+    video.categories = categories;
     return this.videoRepository.save(video);
   }
 
-  findAll(): Promise<Video[]> {
-    return this.videoRepository.find();
+  findAll(difficulty?: Difficulty, category?: string): Promise<Video[]> {
+    const where: any = {};
+    if (difficulty) {
+      where.difficulty = difficulty;
+    }
+    if (category) {
+      where.categories = { name: category };
+    }
+    return this.videoRepository.find({
+      where,
+      relations: ['categories'],
+    });
   }
 
   async fetchYoutubeMetadata(youtubeUrl: string) {
@@ -71,7 +111,7 @@ export class VideosService {
       if (error.response) {
         //Handle API errors from Youtube
         throw new HttpException(
-          `Youtube API Error :${error.response.data.error.message}`,
+          `Youtube API Error :${error.response.message}`,
           error.response.status,
         );
       }
