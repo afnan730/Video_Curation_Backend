@@ -67,4 +67,18 @@ export class CategoriesService {
     const category = await this.findOne(id);
     return this.categoryRepository.remove(category);
   }
+
+  async checkNameExists(name: string): Promise<{ exists: boolean }> {
+    const category = await this.categoryRepository.findOne({
+      where: { name },
+    });
+    return { exists: !!category };
+  }
+
+  async getNames(): Promise<string[]> {
+    const categories = await this.categoryRepository.find({
+      select: ['name'],
+    });
+    return categories.map((category) => category.name);
+  }
 }
